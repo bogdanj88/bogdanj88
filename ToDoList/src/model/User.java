@@ -6,9 +6,13 @@
 package model;
 
 import exception.ItemAlreadyExistsException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  *
@@ -48,19 +52,46 @@ public class User {
     public void addItem() throws ItemAlreadyExistsException {
         Scanner input = new Scanner(System.in);
         System.out.println("Add content to your to do list:");
+        System.out.println("Is it a normal priority item or high priority (hp) item?");
+        System.out.println("Chose between 'normal' and 'hp' high priority");
+        String choice=input.nextLine();
+        
+        if(choice.equals("normal")){
         String toAdd = input.nextLine();
         BaseToDo toDo = new BaseToDo(toAdd);
         if (chores.contains(toDo)) {
             throw new ItemAlreadyExistsException("The item already exists");
         } else {
             chores.add(toDo);
+        }}
+        
+        if(choice.equals("hp")){
+            LocalDateTime deadline=LocalDateTime.now();
+            System.out.println("Input item");
+        String toAdd = input.nextLine();
+        System.out.println("Input deadline(insert number of seconds from now):");
+       long time=Integer.parseInt(input.nextLine());
+       deadline=deadline.plusSeconds(time);
+        HighPriorityToDo toDo = new HighPriorityToDo(deadline,toAdd);
+        if (chores.contains(toDo)) {
+            throw new ItemAlreadyExistsException("The item already exists");
+        } else {
+            chores.add(toDo); 
+            List<Future<HighPriorityToDo>> futures = new ArrayList<>();
+            ExecutorService es = Executors.newCachedThreadPool();
+            
+            Future<HighPriorityToDo> future = (Future<HighPriorityToDo>) es.submit(new CustomRunnable(toDo));
+                futures.add(future);
         }
+        }
+        else System.out.println("You will have to choose a valid option");
+        
     }
 
     public void displayItems() {
         int counter = 1;
         for (BaseToDo chore : chores) {
-            System.out.println(counter + " item " + chore.getContent());
+            System.out.println(counter + ". item " + chore.getContent());
             counter++;
         }
     }
